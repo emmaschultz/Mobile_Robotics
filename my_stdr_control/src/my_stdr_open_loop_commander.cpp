@@ -9,11 +9,13 @@ int main(int argc, char **argv) {
     double sample_dt = 0.01; //specify a sample period of 10ms  
     double speed = 1.0; // 1m/s speed command
     double yaw_rate = 0.5; //0.5 rad/sec yaw rate command
+    double time_1_sec = 1.0;
+    double time_1half_sec = 1.5;
+    double time_2_sec = 2.0;
     double time_3_sec = 3.0; // should move 3 meters or 1.5 rad in 3 seconds
     double time_3half_sec = 3.5;
-    double time_5_sec = 5.0;
-    
-      
+    double time_4_sec = 4.0;
+
     geometry_msgs::Twist twist_cmd; //this is the message type required to send twist commands to STDR 
     // start with all zeros in the command message; should be the case by default, but just to be safe..
     twist_cmd.linear.x = 0.0;
@@ -93,13 +95,92 @@ int main(int argc, char **argv) {
     /* FORWARD */
     twist_cmd.linear.x = speed; //and move forward again
     timer = 0.0; //reset the timer
-    while(timer < time_5_sec) {
+    while(timer < time_3half_sec) {
         twist_commander.publish(twist_cmd);
         timer += sample_dt;
         loop_timer.sleep();
     }
     twist_cmd.linear.x = 0.0; //stop moving forward
 
+    /* TURN LEFT DIAGONALLY */
+    twist_cmd.angular.z = yaw_rate; //and start spinning in place
+    timer = 0.0; //reset the timer
+    while(timer < time_1half_sec) {
+        twist_commander.publish(twist_cmd);
+        timer += sample_dt;
+        loop_timer.sleep();
+    }
+    twist_cmd.angular.z = 0.0; //and stop spinning in place
+
+    /* FORWARD */
+    twist_cmd.linear.x = speed; //and move forward again
+    timer = 0.0; //reset the timer
+    while(timer < time_3half_sec) {
+        twist_commander.publish(twist_cmd);
+        timer += sample_dt;
+        loop_timer.sleep();
+    }
+    twist_cmd.linear.x = 0.0; //stop moving forward
+
+    /* TURN LEFT DIAGONALLY */
+    twist_cmd.angular.z = yaw_rate; //and start spinning in place
+    timer = 0.0; //reset the timer
+    while(timer < time_2_sec) {
+        twist_commander.publish(twist_cmd);
+        timer += sample_dt;
+        loop_timer.sleep();
+    }
+    twist_cmd.angular.z = 0.0; //and stop spinning in place
+
+    /* FORWARD */
+    twist_cmd.linear.x = speed; //and move forward again
+    timer = 0.0; //reset the timer
+    while(timer < time_3_sec) {
+        twist_commander.publish(twist_cmd);
+        timer += sample_dt;
+        loop_timer.sleep();
+    }
+    twist_cmd.linear.x = 0.0; //stop moving forward
+
+    /* TURN RIGHT 90 DEGREES */
+    twist_cmd.angular.z = -yaw_rate; //and start spinning in place
+    timer = 0.0; //reset the timer
+    while(timer < time_3half_sec) {
+        twist_commander.publish(twist_cmd);
+        timer += sample_dt;
+        loop_timer.sleep();
+    }
+    twist_cmd.angular.z = 0.0; //and stop spinning in place
+
+    /* FORWARD */
+    twist_cmd.linear.x = speed; //and move forward again
+    timer = 0.0; //reset the timer
+    while(timer < time_3_sec) {
+        twist_commander.publish(twist_cmd);
+        timer += sample_dt;
+        loop_timer.sleep();
+    }
+    twist_cmd.linear.x = 0.0; //stop moving forward
+
+    /* TURN LEFT 90 DEGREES */
+    twist_cmd.angular.z = yaw_rate; //and start spinning in place
+    timer = 0.0; //reset the timer
+    while(timer < time_3half_sec) {
+        twist_commander.publish(twist_cmd);
+        timer += sample_dt;
+        loop_timer.sleep();
+    }
+    twist_cmd.angular.z = 0.0; //and stop spinning in place
+
+    /* FORWARD */
+    twist_cmd.linear.x = speed; //and move forward again
+    timer = 0.0; //reset the timer
+    while(timer < time_3_sec) {
+        twist_commander.publish(twist_cmd);
+        timer += sample_dt;
+        loop_timer.sleep();
+    }
+    twist_cmd.linear.x = 0.0; //stop moving forward
 
     //halt the motion
     twist_cmd.angular.z = 0.0; 
