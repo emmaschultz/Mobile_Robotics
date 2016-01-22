@@ -1,6 +1,6 @@
 # my_stdr_control
 
-This shows a simple simulation of a robot navigating through a maze to the top left corner of the maze. The movement of the robot is hard coded.
+This is the first project EECS 376. This shows a simple simulation of a robot navigating through a maze to the top left corner of the maze. The movement of the robot is hard coded.
 
 ## How to run
 
