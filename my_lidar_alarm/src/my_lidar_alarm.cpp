@@ -2,6 +2,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Bool.h>
+#include <math.h>
 
 
 const double MIN_SAFE_DISTANCE = 0.5; // set alarm if anything is within 0.5m of the front of robot
@@ -33,6 +34,8 @@ void laserCallback(const sensor_msgs::LaserScan& laser_scan) {
         // BETTER would be to use transforms, which would reference how the LIDAR is mounted;
         // but this will do for simple illustration
         ping_index_ = (int) ((0.0 - angle_min_) / angle_increment_);
+
+        //ping_index_ = (int) (sin (ros::Time::now().toSec()));
         // ping_index_ = (int) sin(time)
         ROS_INFO("LIDAR setup: ping_index = %d", ping_index_);
         
