@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     */
     
     pose.position.x = 0.0;
-    pose.position.y = -6.0;
+    pose.position.y = -6.5;
     pose_stamped.pose = pose;
     path_srv.request.nav_path.poses.push_back(pose_stamped);
 
