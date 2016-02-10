@@ -38,19 +38,25 @@ void do_move(double distance);
 void do_spin(double spin_ang);
 
 //signum function: strip off and return the sign of the argument
-double sgn(double x) { if (x>0.0) {return 1.0; }
-    else if (x<0.0) {return -1.0;}
-    else {return 0.0;}
+double sgn(double x) {
+    if (x > 0.0) {
+        return 1.0;
+    } else if (x < 0.0) {
+        return -1.0;
+    } else {
+        return 0.0;
+    }
 }
 
 //a function to consider periodicity and find min delta angle
 double min_spin(double spin_angle) {
-        if (spin_angle>M_PI) {
-            spin_angle -= 2.0*M_PI;}
-        if (spin_angle< -M_PI) {
-            spin_angle += 2.0*M_PI;}
-         return spin_angle;   
-}            
+    if (spin_angle > M_PI) {
+        spin_angle -= 2.0 * M_PI;
+    }
+    if (spin_angle < -M_PI) {
+        spin_angle += 2.0 * M_PI;}
+        return spin_angle;   
+    }            
 
 // a useful conversion function: from quaternion to yaw
 double convertPlanarQuat2Phi(geometry_msgs::Quaternion quaternion) {
@@ -73,31 +79,31 @@ geometry_msgs::Quaternion convertPlanarPhi2Quaternion(double phi) {
 // a few action functions:
 //a function to reorient by a specified angle (in radians), then halt
 void do_spin(double spin_ang) {
-    ros::Rate loop_timer(1/g_sample_dt);
-    double timer=0.0;
-    double final_time = fabs(spin_ang)/g_spin_speed;
-    g_twist_cmd.angular.z= sgn(spin_ang)*g_spin_speed;
-    while(timer<final_time) {
-          g_twist_commander.publish(g_twist_cmd);
-          timer+=g_sample_dt;
-          loop_timer.sleep(); 
-          }  
-    do_halt(); 
+    ros::Rate loop_timer(1 / g_sample_dt);
+    double timer = 0.0;
+    double final_time = fabs(spin_ang) / g_spin_speed;
+    g_twist_cmd.angular.z = sgn(spin_ang) * g_spin_speed;
+    while(timer < final_time) {
+      g_twist_commander.publish(g_twist_cmd);
+      timer += g_sample_dt;
+      loop_timer.sleep(); 
+    }  
+    do_halt();
 }
 
 //a function to move forward by a specified distance (in meters), then halt
 void do_move(double distance) { // always assumes robot is already oriented properly
                                 // but allow for negative distance to mean move backwards
-    ros::Rate loop_timer(1/g_sample_dt);
-    double timer=0.0;
-    double final_time = fabs(distance)/g_move_speed;
+    ros::Rate loop_timer(1 / g_sample_dt);
+    double timer = 0.0;
+    double final_time = fabs(distance) / g_move_speed;
     g_twist_cmd.angular.z = 0.0; //stop spinning
-    g_twist_cmd.linear.x = sgn(distance)*g_move_speed;
-    while(timer<final_time) {
-          g_twist_commander.publish(g_twist_cmd);
-          timer+=g_sample_dt;
-          loop_timer.sleep(); 
-          }  
+    g_twist_cmd.linear.x = sgn(distance) * g_move_speed;
+    while(timer < final_time) {
+      g_twist_commander.publish(g_twist_cmd);
+      timer += g_sample_dt;
+      loop_timer.sleep(); 
+    }  
     do_halt();
 }
 
@@ -105,36 +111,32 @@ void do_halt() {
     ros::Rate loop_timer(1/g_sample_dt);   
     g_twist_cmd.angular.z= 0.0;
     g_twist_cmd.linear.x=0.0;
-    for (int i=0;i<10;i++) {
-          g_twist_commander.publish(g_twist_cmd);
-          loop_timer.sleep(); 
-          }   
+    for (int i = 0; i < 10; i++) {
+        g_twist_commander.publish(g_twist_cmd);
+        loop_timer.sleep(); 
+    }   
 }
 
 //THIS FUNCTION IS NOT FILLED IN: NEED TO COMPUTE HEADING AND TRAVEL DISTANCE TO MOVE
 //FROM START TO GOAL
 void get_yaw_and_dist(geometry_msgs::Pose current_pose, geometry_msgs::Pose goal_pose,double &dist, double &heading) {
- 
- dist = 0.0; //FALSE!!
- if (dist < g_dist_tol) { //too small of a motion, so just set the heading from goal heading
-   heading = convertPlanarQuat2Phi(goal_pose.orientation); 
- }
- else {
-    heading = 0.0; //FALSE!!
- }
-
+    dist = 0.0; //FALSE!!
+    if (dist < g_dist_tol) { //too small of a motion, so just set the heading from goal heading
+        heading = convertPlanarQuat2Phi(goal_pose.orientation); 
+    } else {
+        heading = 0.0; //FALSE!!
+    }
 }
 
 
-bool callback(my_path_service::PathSrvRequest& request, my_path_service::PathSrvResponse& response)
-{
+bool callback(my_path_service::PathSrvRequest& request, my_path_service::PathSrvResponse& response) {
     ROS_INFO("callback activated");
     double yaw_desired, yaw_current, travel_distance, spin_angle;
     geometry_msgs::Pose pose_desired;
     int npts = request.nav_path.poses.size();
     ROS_INFO("received path request with %d poses",npts);    
     
-    for (int i=0;i<npts;i++) { //visit each subgoal
+    for (int i = 0; i < npts; i++) { //visit each subgoal
         // odd notation: drill down, access vector element, drill some more to get pose
         pose_desired = request.nav_path.poses[i].pose; //get next pose from vector of poses
         
@@ -151,7 +153,7 @@ bool callback(my_path_service::PathSrvRequest& request, my_path_service::PathSrv
         // GET RID OF NEXT LINE AFTER FIXING get_yaw_and_dist()
         yaw_desired = convertPlanarQuat2Phi(pose_desired.orientation); //from i'th desired pose
         
-        ROS_INFO("pose %d: desired yaw = %f",i,yaw_desired);        
+        ROS_INFO("pose %d: desired yaw = %f", i, yaw_desired);        
         yaw_current = convertPlanarQuat2Phi(g_current_pose.orientation); //our current yaw--should use a sensor
         spin_angle = yaw_desired - yaw_current; // spin this much
         spin_angle = min_spin(spin_angle);// but what if this angle is > pi?  then go the other way
@@ -161,19 +163,19 @@ bool callback(my_path_service::PathSrvRequest& request, my_path_service::PathSrv
         
         //FIX THE NEXT LINE, BASED ON get_yaw_and_dist()
         do_move(1.0);  // move forward 1m...just for illustration; SHOULD compute this from subgoal pose
-        }
+    }
 
-  return true;
+    return true;
 }
 
 void do_inits(ros::NodeHandle &n) {
   //initialize components of the twist command global variable
-    g_twist_cmd.linear.x=0.0;
-    g_twist_cmd.linear.y=0.0;    
-    g_twist_cmd.linear.z=0.0;
-    g_twist_cmd.angular.x=0.0;
-    g_twist_cmd.angular.y=0.0;
-    g_twist_cmd.angular.z=0.0;  
+    g_twist_cmd.linear.x = 0.0;
+    g_twist_cmd.linear.y = 0.0;    
+    g_twist_cmd.linear.z = 0.0;
+    g_twist_cmd.angular.x = 0.0;
+    g_twist_cmd.angular.y = 0.0;
+    g_twist_cmd.angular.z = 0.0;  
     
     //define initial position to be 0
     g_current_pose.position.x = 0.0;
@@ -190,19 +192,18 @@ void do_inits(ros::NodeHandle &n) {
     g_twist_commander = n.advertise<geometry_msgs::Twist>("/robot0/cmd_vel", 1);    
 }
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "path_service");
-  ros::NodeHandle n;
+int main(int argc, char **argv) {
+    ros::init(argc, argv, "path_service");
+    ros::NodeHandle n;
   
-  // to clean up "main", do initializations in a separate function
-  // a poor-man's class constructor
-  do_inits(n); //pass in a node handle so this function can set up publisher with it
+    // to clean up "main", do initializations in a separate function
+    // a poor-man's class constructor
+    do_inits(n); //pass in a node handle so this function can set up publisher with it
   
-  // establish a service to receive path commands
-  ros::ServiceServer service = n.advertiseService("path_service", callback);
-  ROS_INFO("Ready to accept paths.");
-  ros::spin(); //callbacks do all the work now
+    // establish a service to receive path commands
+    ros::ServiceServer service = n.advertiseService("path_service", callback);
+    ROS_INFO("Ready to accept paths.");
+    ros::spin(); //callbacks do all the work now
 
-  return 0;
+    return 0;
 }
