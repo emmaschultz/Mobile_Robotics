@@ -1,0 +1,5 @@
+<launch>
+	<include file ="$(find stdr_launchers)/launch/server_with_map_and_gui_plus_robot.launch"/>
+	<node name= "my_path_service" pkg= "my_path_service" type= "my_path_service"/>
+	<!-- <node name= "my_path_client" pkg= "my_path_service" type= "my_path_client"/> -->
+</launch>
