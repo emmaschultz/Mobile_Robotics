@@ -2,7 +2,7 @@
 // illustrates how to send a request to the path_service service
 
 #include <ros/ros.h>
-#include <example_ros_service/PathSrv.h> // this message type is defined in the current package
+#include <my_path_service/PathSrv.h> // this message type is defined in the current package
 #include <iostream>
 #include <string>
 #include <nav_msgs/Path.h>
@@ -22,7 +22,7 @@ geometry_msgs::Quaternion convertPlanarPhi2Quaternion(double phi) {
 int main(int argc, char **argv) {
     ros::init(argc, argv, "path_client");
     ros::NodeHandle n;
-    ros::ServiceClient client = n.serviceClient<example_ros_service::PathSrv>("path_service");
+    ros::ServiceClient client = n.serviceClient<my_path_service::PathSrv>("path_service");
     geometry_msgs::Quaternion quat;
     
     while (!client.exists()) {
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
       ros::Duration(1.0).sleep();
     }
     ROS_INFO("connected client to service");
-    example_ros_service::PathSrv path_srv;
+    my_path_service::PathSrv path_srv;
     
     //create some path points...this should be done by some intelligent algorithm, but we'll hard-code it here
     geometry_msgs::PoseStamped pose_stamped;
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     path_srv.request.nav_path.poses.push_back(pose_stamped);
     
     // some more poses...
-    quat = convertPlanarPhi2Quaternion(1.57); // get a quaterion corresponding to this heading
+    quat = convertPlanarPhi2Quaternion(1.57); // get a quaternion corresponding to this heading
     pose_stamped.pose.orientation = quat;   
     pose_stamped.pose.position.y=1.0; // say desired y-coord is 1.0
     path_srv.request.nav_path.poses.push_back(pose_stamped);

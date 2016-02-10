@@ -8,7 +8,7 @@
 // i.e., equivalent to expressing subgoals in odom frame
 
 #include <ros/ros.h>
-#include <example_ros_service/PathSrv.h>
+#include <my_path_service/PathSrv.h>
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
@@ -20,7 +20,7 @@ using namespace std;
 const double g_move_speed = 1.0; // set forward speed to this value, e.g. 1m/s
 const double g_spin_speed = 1.0; // set yaw rate to this value, e.g. 1 rad/s
 const double g_sample_dt = 0.01;
-
+const double g_dist_tol = 0.01; // 1cm
 //global variables, including a publisher object
 geometry_msgs::Twist g_twist_cmd;
 ros::Publisher g_twist_commander; //global publisher object
@@ -111,8 +111,22 @@ void do_halt() {
           }   
 }
 
+//THIS FUNCTION IS NOT FILLED IN: NEED TO COMPUTE HEADING AND TRAVEL DISTANCE TO MOVE
+//FROM START TO GOAL
+void get_yaw_and_dist(geometry_msgs::Pose current_pose, geometry_msgs::Pose goal_pose,double &dist, double &heading) {
+ 
+ dist = 0.0; //FALSE!!
+ if (dist < g_dist_tol) { //too small of a motion, so just set the heading from goal heading
+   heading = convertPlanarQuat2Phi(goal_pose.orientation); 
+ }
+ else {
+    heading = 0.0; //FALSE!!
+ }
 
-bool callback(example_ros_service::PathSrvRequest& request, example_ros_service::PathSrvResponse& response)
+}
+
+
+bool callback(my_path_service::PathSrvRequest& request, my_path_service::PathSrvResponse& response)
 {
     ROS_INFO("callback activated");
     double yaw_desired, yaw_current, travel_distance, spin_angle;
@@ -122,11 +136,21 @@ bool callback(example_ros_service::PathSrvRequest& request, example_ros_service:
     
     for (int i=0;i<npts;i++) { //visit each subgoal
         // odd notation: drill down, access vector element, drill some more to get pose
-        pose_desired = request.nav_path.poses[i].pose; //get first pose from vector of poses
+        pose_desired = request.nav_path.poses[i].pose; //get next pose from vector of poses
+        
+        //WRITE THIS FNC: compute desired heading and travel distance based on current and desired poses
+        //get_yaw_and_dist(g_current_pose, pose_desired,travel_distance, yaw_desired);
+        //ROS_INFO("pose %d: desired yaw = %f; desired (x,y) = (%f,%f)",i,yaw_desired,
+        //   pose_desired.position.x,pose_desired.position.y); 
+        //ROS_INFO("current (x,y) = (%f, %f)",g_current_pose.position.x,g_current_pose.position.y);
+        //ROS_INFO("travel distance = %f",travel_distance);         
+        
         
         // a quaternion is overkill for navigation in a plane; really only need a heading angle
         // this yaw is measured CCW from x-axis
+        // GET RID OF NEXT LINE AFTER FIXING get_yaw_and_dist()
         yaw_desired = convertPlanarQuat2Phi(pose_desired.orientation); //from i'th desired pose
+        
         ROS_INFO("pose %d: desired yaw = %f",i,yaw_desired);        
         yaw_current = convertPlanarQuat2Phi(g_current_pose.orientation); //our current yaw--should use a sensor
         spin_angle = yaw_desired - yaw_current; // spin this much
@@ -135,8 +159,8 @@ bool callback(example_ros_service::PathSrvRequest& request, example_ros_service:
         // we will just assume that this action was successful--really should have sensor feedback here
         g_current_pose.orientation = pose_desired.orientation; // assumes got to desired orientation precisely
         
-        // move forward 1m...just for illustration; SHOULD compute this from subgoal pose
-        do_move(1.0);
+        //FIX THE NEXT LINE, BASED ON get_yaw_and_dist()
+        do_move(1.0);  // move forward 1m...just for illustration; SHOULD compute this from subgoal pose
         }
 
   return true;
