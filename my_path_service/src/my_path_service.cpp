@@ -117,8 +117,8 @@ void do_halt() {
     }   
 }
 
-void get_yaw_and_dist(geometry_msgs::Pose current_pose, geometry_msgs::Pose goal_pose,double &dist, double &heading) {
-    // find the positions of the start and end goal
+void get_yaw_and_dist(geometry_msgs::Pose current_pose, geometry_msgs::Pose goal_pose, double &dist, double &heading) {
+    // find the positions of the start position and end position
     double x_start, y_start, x_end, y_end;
     x_start = current_pose.position.x;
     y_start = current_pose.position.y;
@@ -154,19 +154,12 @@ bool callback(my_path_service::PathSrvRequest& request, my_path_service::PathSrv
         pose_desired = request.nav_path.poses[i].pose; //get next pose from vector of poses
         
         //WRITE THIS FNC: compute desired heading and travel distance based on current and desired poses
-        //get_yaw_and_dist(g_current_pose, pose_desired,travel_distance, yaw_desired);
-        //ROS_INFO("pose %d: desired yaw = %f; desired (x,y) = (%f,%f)",i,yaw_desired,
-        //   pose_desired.position.x,pose_desired.position.y); 
-        //ROS_INFO("current (x,y) = (%f, %f)",g_current_pose.position.x,g_current_pose.position.y);
-        //ROS_INFO("travel distance = %f",travel_distance);         
+        get_yaw_and_dist(g_current_pose, pose_desired, travel_distance, yaw_desired);
+        ROS_INFO("pose %d: desired yaw = %f; desired (x,y) = (%f,%f)", i, yaw_desired, pose_desired.position.x, pose_desired.position.y);
+        ROS_INFO("current (x,y) = (%f, %f)", g_current_pose.position.x, g_current_pose.position.y);
+        ROS_INFO("travel distance = %f",travel_distance);         
         
-        
-        // a quaternion is overkill for navigation in a plane; really only need a heading angle
-        // this yaw is measured CCW from x-axis
-        // GET RID OF NEXT LINE AFTER FIXING get_yaw_and_dist()
-        yaw_desired = convertPlanarQuat2Phi(pose_desired.orientation); //from i'th desired pose
-        
-        ROS_INFO("pose %d: desired yaw = %f", i, yaw_desired);        
+        //ROS_INFO("pose %d: desired yaw = %f", i, yaw_desired);        
         yaw_current = convertPlanarQuat2Phi(g_current_pose.orientation); //our current yaw--should use a sensor
         spin_angle = yaw_desired - yaw_current; // spin this much
         spin_angle = min_spin(spin_angle);// but what if this angle is > pi?  then go the other way
@@ -175,7 +168,8 @@ bool callback(my_path_service::PathSrvRequest& request, my_path_service::PathSrv
         g_current_pose.orientation = pose_desired.orientation; // assumes got to desired orientation precisely
         
         //FIX THE NEXT LINE, BASED ON get_yaw_and_dist()
-        do_move(1.0);  // move forward 1m...just for illustration; SHOULD compute this from subgoal pose
+        do_move(travel_distance);
+        // do_move(1.0);  // move forward 1m...just for illustration; SHOULD compute this from subgoal pose
     }
 
     return true;
