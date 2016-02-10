@@ -117,14 +117,27 @@ void do_halt() {
     }   
 }
 
-//THIS FUNCTION IS NOT FILLED IN: NEED TO COMPUTE HEADING AND TRAVEL DISTANCE TO MOVE
-//FROM START TO GOAL
 void get_yaw_and_dist(geometry_msgs::Pose current_pose, geometry_msgs::Pose goal_pose,double &dist, double &heading) {
-    dist = 0.0; //FALSE!!
-    if (dist < g_dist_tol) { //too small of a motion, so just set the heading from goal heading
+    // find the positions of the start and end goal
+    double x_start, y_start, x_end, y_end;
+    x_start = current_pose.position.x;
+    y_start = current_pose.position.y;
+    x_end = goal_pose.position.x;
+    y_end = goal_pose.position.y;
+
+    // find the change in position in the x and y directions
+    double dx, dy;
+    dx = x_end - x_start;
+    dy = y_end - y_start;
+
+    // compute the distance
+    dist = sqrt((dx * dx) + (dy * dy));
+
+    // if distance is less than a specified tolerance, just set the heading from goal heading
+    if (dist < g_dist_tol) {
         heading = convertPlanarQuat2Phi(goal_pose.orientation); 
     } else {
-        heading = 0.0; //FALSE!!
+        heading = atan2(dy, dx);
     }
 }
 
