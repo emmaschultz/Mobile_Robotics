@@ -135,7 +135,7 @@ void get_yaw_and_dist(geometry_msgs::Pose current_pose, geometry_msgs::Pose goal
 
     // if distance is less than a specified tolerance, just set the heading from goal heading
     if (dist < g_dist_tol) {
-        heading = convertPlanarQuat2Phi(goal_pose.orientation); 
+        heading = convertPlanarQuat2Phi(goal_pose.orientation);
     } else {
         heading = atan2(dy, dx);
     }
@@ -147,7 +147,7 @@ bool callback(my_path_service::PathSrvRequest& request, my_path_service::PathSrv
     double yaw_desired, yaw_current, travel_distance, spin_angle;
     geometry_msgs::Pose pose_desired;
     int npts = request.nav_path.poses.size();
-    ROS_INFO("received path request with %d poses",npts);    
+    ROS_INFO("received path request with %d poses\n",npts);
     
     for (int i = 0; i < npts; i++) { //visit each subgoal
         // odd notation: drill down, access vector element, drill some more to get pose
@@ -157,7 +157,7 @@ bool callback(my_path_service::PathSrvRequest& request, my_path_service::PathSrv
         get_yaw_and_dist(g_current_pose, pose_desired, travel_distance, yaw_desired);
         ROS_INFO("pose %d: desired yaw = %f; desired (x,y) = (%f,%f)", i, yaw_desired, pose_desired.position.x, pose_desired.position.y);
         ROS_INFO("current (x,y) = (%f, %f)", g_current_pose.position.x, g_current_pose.position.y);
-        ROS_INFO("travel distance = %f",travel_distance);         
+        ROS_INFO("travel distance = %f \n",travel_distance);
         
         //ROS_INFO("pose %d: desired yaw = %f", i, yaw_desired);        
         yaw_current = convertPlanarQuat2Phi(g_current_pose.orientation); //our current yaw--should use a sensor

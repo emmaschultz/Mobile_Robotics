@@ -33,10 +33,12 @@ int main(int argc, char **argv) {
     my_path_service::PathSrv path_srv;
     
     //create some path points...this should be done by some intelligent algorithm, but we'll hard-code it here
+    
     geometry_msgs::PoseStamped pose_stamped;
     geometry_msgs::Pose pose;
-    pose.position.x = 1.0; // say desired x-coord is 1
-    pose.position.y = 0.0;
+    
+    pose.position.x = 0.0;
+    pose.position.y = 3.0;
     pose.position.z = 0.0; // let's hope so!
     pose.orientation.x = 0.0; //always, for motion in horizontal plane
     pose.orientation.y = 0.0; // ditto
@@ -45,6 +47,7 @@ int main(int argc, char **argv) {
     pose_stamped.pose = pose;
     path_srv.request.nav_path.poses.push_back(pose_stamped);
     
+    /*
     // some more poses...
     quat = convertPlanarPhi2Quaternion(1.57); // get a quaternion corresponding to this heading
     pose_stamped.pose.orientation = quat;   
@@ -56,6 +59,39 @@ int main(int argc, char **argv) {
     //desired position is not updated...just the desired heading  
     path_srv.request.nav_path.poses.push_back(pose_stamped);
     client.call(path_srv);
+    */
+    /*
+    quat = convertPlanarPhi2Quaternion(3.14152 / 2);
+    pose_stamped.pose.orientation = quat;
+    pose_stamped.pose.position.y = 1;
+    path_srv.request.nav_path.poses.push_back(pose_stamped);
+    */
+    
+    pose.position.x = 0.0;
+    pose.position.y = -6.0;
+    pose_stamped.pose = pose;
+    path_srv.request.nav_path.poses.push_back(pose_stamped);
 
+    pose.position.x = 0.0;
+    pose.position.y = 8.0;
+    pose_stamped.pose = pose;
+    path_srv.request.nav_path.poses.push_back(pose_stamped);
+
+    pose.position.x = 0.0;
+    pose.position.y = 4.0;
+    pose_stamped.pose = pose;
+    path_srv.request.nav_path.poses.push_back(pose_stamped);
+
+    pose.position.x = 0.0;
+    pose.position.y = -1.5;
+    pose_stamped.pose = pose;
+    path_srv.request.nav_path.poses.push_back(pose_stamped);
+
+    pose.position.x = 0.0;
+    pose.position.y = 2.0;
+    pose_stamped.pose = pose;
+    path_srv.request.nav_path.poses.push_back(pose_stamped);
+
+    client.call(path_srv);
     return 0;
 }
