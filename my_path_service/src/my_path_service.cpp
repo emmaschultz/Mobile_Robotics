@@ -1,11 +1,6 @@
 //path_service:
 // example showing how to receive a nav_msgs/Path request
-// run with complementary path_client
-// responds immediately to ack new path...but execution takes longer
-
-// this is a crude service; just assumes robot initial pose is 0,
-// and all subgoals are expressed with respect to this initial frame.
-// i.e., equivalent to expressing subgoals in odom frame
+// run with complementary my_path_client
 
 #include <ros/ros.h>
 #include <my_path_service/PathSrv.h>
@@ -149,34 +144,31 @@ bool callback(my_path_service::PathSrvRequest& request, my_path_service::PathSrv
     int npts = request.nav_path.poses.size();
     ROS_INFO("received path request with %d poses\n",npts);
     
-    for (int i = 0; i < npts; i++) { //visit each subgoal
-        // odd notation: drill down, access vector element, drill some more to get pose
-        pose_desired = request.nav_path.poses[i].pose; //get next pose from vector of poses
+    for (int i = 0; i < npts; i++) {
+        // visit each subgoal
+        pose_desired = request.nav_path.poses[i].pose;
         
-        //WRITE THIS FNC: compute desired heading and travel distance based on current and desired poses
+        // compute desired heading and travel distance based on current and desired poses
         get_yaw_and_dist(g_current_pose, pose_desired, travel_distance, yaw_desired);
         ROS_INFO("pose %d: desired yaw = %f; desired (x,y) = (%f,%f)", i, yaw_desired, pose_desired.position.x, pose_desired.position.y);
         ROS_INFO("current (x,y) = (%f, %f)", g_current_pose.position.x, g_current_pose.position.y);
         ROS_INFO("travel distance = %f \n",travel_distance);
-        
-        //ROS_INFO("pose %d: desired yaw = %f", i, yaw_desired);        
-        yaw_current = convertPlanarQuat2Phi(g_current_pose.orientation); //our current yaw--should use a sensor
+               
+        yaw_current = convertPlanarQuat2Phi(g_current_pose.orientation); //our current yaw
         spin_angle = yaw_desired - yaw_current; // spin this much
         spin_angle = min_spin(spin_angle);// but what if this angle is > pi?  then go the other way
         do_spin(spin_angle); // carry out this incremental action
-        // we will just assume that this action was successful--really should have sensor feedback here
+        // we will just assume that this action was successful
         g_current_pose.orientation = pose_desired.orientation; // assumes got to desired orientation precisely
         
-        //FIX THE NEXT LINE, BASED ON get_yaw_and_dist()
         do_move(travel_distance);
-        // do_move(1.0);  // move forward 1m...just for illustration; SHOULD compute this from subgoal pose
     }
 
     return true;
 }
 
 void do_inits(ros::NodeHandle &n) {
-  //initialize components of the twist command global variable
+    //initialize components of the twist command global variable
     g_twist_cmd.linear.x = 0.0;
     g_twist_cmd.linear.y = 0.0;    
     g_twist_cmd.linear.z = 0.0;
