@@ -55,10 +55,11 @@ MyMotionControl::MyMotionControl() : as_(nh_, "timer_action", boost::bind(&MyMot
 // e.g.,  "demoAction" is auto-generated from (our) base name "demo" and generic name "Action"
 void MyMotionControl::executeCB(const actionlib::SimpleActionServer<my_motion_control::PathMsgAction>::GoalConstPtr& goal) {
     ROS_INFO("in executeCB");
-    ROS_INFO("goal input is: %d", goal->input);
+    ROS_INFO("goal input is: %d", goal->nav_path);
     //do work here: this is where your interesting code goes
+
     ros::Rate timer(1.0); // 1Hz timer
-    countdown_val_ = goal->input;
+    countdown_val_ = goal->nav_path;
     //implement a simple timer, which counts down from provided countdown_val to 0, in seconds
     while (countdown_val_ > 0) {
        ROS_INFO("countdown = %d",countdown_val_);
