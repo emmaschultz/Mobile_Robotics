@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
+#include <nav_msgs/Path.h>
 #include <my_motion_control/PathMsgAction.h>
 
 
@@ -13,7 +14,6 @@ void doneCb(const actionlib::SimpleClientGoalState& state, const my_motion_contr
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "action_client_node"); // name this node 
-    int g_count = 0;
     my_motion_control::PathMsgGoal goal;
 
     // use the name of our server, which is: example_action (named in my_motion_control.cpp)
@@ -35,11 +35,12 @@ int main(int argc, char** argv) {
     ROS_INFO("connected to action server");  // if here, then we connected to the server;
 
     while(true) {
-        // stuff a goal message:
-        g_count++;
-        goal.input = g_count; // this merely sequentially numbers the goals sent
+    	//do calculations and such here
+
+
+
         //action_client.sendGoal(goal); // simple example--send goal, but do not specify callbacks
-        action_client.sendGoal(goal,&doneCb); // we could also name additional callback functions here, if desired
+        action_client.sendGoal(goal, &doneCb); // we could also name additional callback functions here, if desired
         //    action_client.sendGoal(goal, &doneCb, &activeCb, &feedbackCb); //e.g., like this
 
         bool finished_before_timeout = action_client.waitForResult(ros::Duration(5.0));

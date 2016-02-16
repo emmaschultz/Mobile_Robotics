@@ -8,6 +8,7 @@
 
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
+#include <nav_msgs/Path.h>
 #include <my_motion_control/PathMsgAction.h>
 
 int g_count = 0;
@@ -59,15 +60,15 @@ void MyMotionControl::executeCB(const actionlib::SimpleActionServer<my_motion_co
     ros::Rate timer(1.0); // 1Hz timer
     countdown_val_ = goal->input;
     //implement a simple timer, which counts down from provided countdown_val to 0, in seconds
-    while (countdown_val_>0) {
+    while (countdown_val_ > 0) {
        ROS_INFO("countdown = %d",countdown_val_);
        
        // each iteration, check if cancellation has been ordered
-       if (as_.isPreemptRequested()){	
-          ROS_WARN("goal cancelled!");
-          result_.output = countdown_val_;
-          as_.setAborted(result_); // tell the client we have given up on this goal; send the result message as well
-          return; // done with callback
+       if (as_.isPreemptRequested()) {	
+        	ROS_WARN("goal cancelled!");
+        	result_.output = countdown_val_;
+        	as_.setAborted(result_); // tell the client we have given up on this goal; send the result message as well
+        	return; // done with callback
  		}
  	
  	   //if here, then goal is still valid; provide some feedback
