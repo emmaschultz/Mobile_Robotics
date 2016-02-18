@@ -8,7 +8,8 @@
 
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
-#include <nav_msgs/Path.h>
+//#include <nav_msgs/Path.h>
+#include <std_msgs/Float64.h>  //TODO IS THIS NEEDED?
 #include <geometry_msgs/Twist.h>
 #include <mobot_motion_control/PathMsgAction.h>
 
