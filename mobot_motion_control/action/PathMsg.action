@@ -1,8 +1,9 @@
 #goal
-nav_msgs/Path nav_path
+float64[] distance
+float64[] angle
 ---
 #result
 bool completed
 ---
 #feedback
-uint32 fdbk
+int32 fdbk
