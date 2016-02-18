@@ -5,4 +5,4 @@ nav_msgs/Path nav_path
 bool completed
 ---
 #feedback
-int32 fdbk
+uint32 fdbk

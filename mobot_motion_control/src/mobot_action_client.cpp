@@ -9,9 +9,13 @@ bool g_alarm_activated = false;
 // This function will be called once when the goal completes
 // this is optional, but it is a convenient way to get access to the "result" message sent by the server
 void doneCb(const actionlib::SimpleClientGoalState& state, const mobot_motion_control::PathMsgResultConstPtr& result) {
-    ROS_INFO(" doneCb: server responded with state [%s]", state.toString().c_str());
-    int diff = result->output - result->goal_stamp;
-    ROS_INFO("got result output = %d; goal_stamp = %d; diff = %d",result->output,result->goal_stamp,diff);
+    ROS_INFO("doneCb: server responded with state [%s]", state.toString().c_str());
+    bool isSuccess = result->completed;
+    if(isSuccess) {
+    	ROS_INFO("Path was successfully completed.");
+    } else {
+    	ROS_INFO("Path was not completed.");
+    }
 }
 
 void executeCb(const std_msgs::Bool& alarm_msg) {
@@ -22,7 +26,7 @@ void executeCb(const std_msgs::Bool& alarm_msg) {
 }
 
 int main(int argc, char** argv) {
-    ros::init(argc, argv, "action_client_node"); // name this node 
+    ros::init(argc, argv, "mobot_action_client"); // name this node
     ros::NodeHandle nh;
     mobot_motion_control::PathMsgGoal goal;
 
@@ -33,21 +37,27 @@ int main(int argc, char** argv) {
     // attempt to connect to the server:
     ROS_INFO("waiting for server: ");
     bool server_exists = action_client.waitForServer(ros::Duration(5.0)); // wait for up to 5 seconds
-    // something odd in above: does not seem to wait for 5 seconds, but returns rapidly if server not running
     // bool server_exists = action_client.waitForServer(); //wait forever
 
     if (!server_exists) {
         ROS_WARN("could not connect to server; halting");
-        return 1; // bail out; optionally, could print a warning message and retry
+        return 1;
     }
 
-    ROS_INFO("connected to action server");  // if here, then we connected to the server;
+    ROS_INFO("connected to action server");  // if here, then we connected to the server
+
+    //create and package up some goal poses
+    //send these goal poses from the client to the server
+    //make sure that nav_path.header.seq is filled in with a counter
+    //then just use the loop to check whether alarm has been triggered?
 
     while(ros::ok()) {
         if(g_alarm_activated) {
             //preempt previously sent goal
             action_client.cancelAllGoals();
             //action_client.cancelGoal();
+
+            //give the mobot a new goal
             g_alarm_activated = false; //reset alarm
         } else {
             ////////do calculations and such here
@@ -56,7 +66,6 @@ int main(int argc, char** argv) {
             //but first check if alarm has been tripped
         }
 
-
         //action_client.sendGoal(goal); // simple example--send goal, but do not specify callbacks
         action_client.sendGoal(goal, &doneCb); // we could also name additional callback functions here, if desired
         //    action_client.sendGoal(goal, &doneCb, &activeCb, &feedbackCb); //e.g., like this
@@ -64,7 +73,7 @@ int main(int argc, char** argv) {
         bool finished_before_timeout = action_client.waitForResult(ros::Duration(5.0));
         //bool finished_before_timeout = action_client.waitForResult(); // wait forever...
         if (!finished_before_timeout) {
-            ROS_WARN("giving up waiting on result for goal number %d",g_count);
+            ROS_WARN("giving up waiting on result");
             return 1;
         } else {
             //if here, then server returned a result to us

@@ -28,7 +28,6 @@ private:
     mobot_motion_control::PathMsgResult result_; // put results here, to be sent back to the client when done w/ goal
     mobot_motion_control::PathMsgFeedback feedback_; // for feedback 
     //  use: as_.publishFeedback(feedback_); to send incremental feedback to the client
-    int countdown_val_;
 
 
 public:
@@ -43,51 +42,40 @@ public:
 MyMotionControl::MyMotionControl() : as_(nh_, "mobot_action", boost::bind(&MyMotionControl::executeCB, this, _1),false) {
     ROS_INFO("in constructor of MyMotionControl...");
     // do any other desired initializations here...specific to your implementation
-    vel_pub = nh_.advertise<geometry_msgs::Twist>("/robot0/cmd_vel", 1);  //TODO IS THIS THE CORRECT ROBOT NAME?
+    vel_pub = nh_.advertise<geometry_msgs::Twist>("/mobot/cmd_vel", 1);  //TODO IS THIS THE CORRECT ROBOT NAME?
 
     as_.start(); //start the server running
 }
 
-//executeCB implementation: this is a member method that will get registered with the action server
-// argument type is very long.  Meaning:
-// actionlib is the package for action servers
-// SimpleActionServer is a templated class in this package (defined in the "actionlib" ROS package)
-// <mobot_motion_control::demoAction> customizes the simple action server to use our own "action" message 
-// defined in our package, "mobot_motion_control", in the subdirectory "action", called "demo.action"
-// The name "demo" is prepended to other message types created automatically during compilation.
-// e.g.,  "demoAction" is auto-generated from (our) base name "demo" and generic name "Action"
 void MyMotionControl::executeCB(const actionlib::SimpleActionServer<mobot_motion_control::PathMsgAction>::GoalConstPtr& goal) {
     ROS_INFO("in executeCB");
-    ROS_INFO("goal input is: %d", goal->nav_path);
     //do work here: this is where your interesting code goes
-
+    //refer to goal as goal->nav_path
+    nav_msgs::Path path = goal->nav_path;
     ros::Rate timer(1.0); // 1Hz timer
-    countdown_val_ = goal->nav_path;
-    //implement a simple timer, which counts down from provided countdown_val to 0, in seconds
-    while (countdown_val_ > 0) {
-       ROS_INFO("countdown = %d",countdown_val_);
-       
+
+    while (ros::ok() /*&& there are still poses to be executed*/) {
        // each iteration, check if cancellation has been ordered
        if (as_.isPreemptRequested()) {	
         	ROS_WARN("goal cancelled!");
-        	result_.output = countdown_val_;
+        	result_.completed = false;
         	as_.setAborted(result_); // tell the client we have given up on this goal; send the result message as well
-        	return; // done with callback
+        	return;
  		}
  	
  	   //if here, then goal is still valid; provide some feedback
- 	   feedback_.fdbk = countdown_val_; // populate feedback message with current countdown value
+ 	   feedback_.fdbk = 5; //this should maybe be nav_path.header.seq TODO GIVE SOME BETTER FEEDBACK populate feedback message with current pose
  	   as_.publishFeedback(feedback_); // send feedback to the action client that requested this goal
-       countdown_val_--; //decrement the timer countdown
+ 	   //go to next pose
        timer.sleep(); //wait 1 sec between loop iterations of this timer
     }
     //if we survive to here, then the goal was successfully accomplished; inform the client
-    result_.output = countdown_val_; //value should be zero, if completed countdown
+    result_.completed = true; //value should be zero, if completed countdown
     as_.setSucceeded(result_); // return the "result" message to client, along with "success" status
 }
 
 int main(int argc, char** argv) {
-    ros::init(argc, argv, "timer_action_server_node"); // name this node 
+    ros::init(argc, argv, "mobot_action_server"); // name this node
 
     ROS_INFO("instantiating the timer_action_server: ");
 
