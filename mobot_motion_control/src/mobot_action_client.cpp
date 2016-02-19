@@ -37,7 +37,6 @@ int main(int argc, char** argv) {
 
     // attempt to connect to the server:
     ROS_INFO("waiting for server: ");
-    //bool server_exists = action_client.waitForServer(ros::Duration(5.0)); // wait for up to 5 seconds
     bool server_exists = action_client.waitForServer(); //wait forever
 
     if (!server_exists) {
@@ -47,17 +46,12 @@ int main(int argc, char** argv) {
 
     ROS_INFO("connected to action server");  // if here, then we connected to the server
 
-    //create and package up some goal poses
-    //send these goal poses from the client to the server
-    //make sure that nav_path.header.seq is filled in with a counter
-    //then just use the loop to check whether alarm has been triggered?
     ros::Rate timer(10);
 
     while(ros::ok()) {
         if(g_alarm_activated) {
-            //preempt previously sent goal
+        	//cancel all goals in order to send a new goal to avoid whatever obstacle is in the way
             action_client.cancelAllGoals();
-            //action_client.cancelGoal();
             ROS_INFO("Current goal has been cancelled.");
 
             //turn and move a different direction because there is something in the robot's way
@@ -85,7 +79,7 @@ int main(int argc, char** argv) {
         	goal.angle.resize(1);
         	goal.angle[0] = 0;
 
-        	/*
+        	/* could potentially send over multiple poses
         	goal.distance.resize(4);
         	goal.distance[0] = 4;
         	goal.distance[1] = 3;

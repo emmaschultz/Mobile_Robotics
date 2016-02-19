@@ -1,17 +1,8 @@
-// mobot_motion_control: 2nd version, includes "cancel" and "feedback"
-// expects client to give an integer corresponding to a timer count, in seconds
-// server counts up to this value, provides feedback, and can be cancelled any time
-// re-use the existing action message, although not all fields are needed
-// use request "input" field for timer setting input, 
-// value of "fdbk" will be set to the current time (count-down value)
-// "output" field will contain the final value when the server completes the goal request
 
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
-//#include <nav_msgs/Path.h>
-#include <std_msgs/Float64.h>  //TODO IS THIS NEEDED?
 #include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Pose.h>  //TODO IS THIS NEEDED?
+#include <geometry_msgs/Pose.h>
 #include <mobot_motion_control/PathMsgAction.h>
 
 const double g_move_speed = 1.0; //mobot will move at 1 m/s
@@ -20,12 +11,12 @@ const double g_sample_dt = 0.01;
 
 class MobotMotionControl {
 private:
-    ros::NodeHandle nh_;  // we'll need a node handle; get one upon instantiation
+    ros::NodeHandle nh_;
 
     actionlib::SimpleActionServer<mobot_motion_control::PathMsgAction> as_;
     ros::Publisher vel_pub;
     geometry_msgs::Twist g_twist_cmd;
-    geometry_msgs::Pose g_current_pose;   //TODO IS THIS NECESSARY?
+    geometry_msgs::Pose g_current_pose;
 
     mobot_motion_control::PathMsgGoal goal_;
     mobot_motion_control::PathMsgResult result_;
@@ -53,7 +44,7 @@ public:
 MobotMotionControl::MobotMotionControl() : as_(nh_, "mobot_action", boost::bind(&MobotMotionControl::executeCB, this, _1),false) {
     ROS_INFO("in constructor of MobotMotionControl...");
     // do any other desired initializations here...specific to your implementation
-    vel_pub = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 1);  //TODO IS THIS THE CORRECT ROBOT NAME?
+    vel_pub = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
     do_inits();
     as_.start(); //start the server running
 }
