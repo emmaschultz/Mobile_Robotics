@@ -117,7 +117,7 @@ void MobotMotionControl::do_inits() {
     g_current_pose.orientation.x = 0.0;
     g_current_pose.orientation.y = 0.0;
     g_current_pose.orientation.z = 0.0;
-    g_current_pose.orientation.w = 1.0;  
+    g_current_pose.orientation.w = 1.0; 
 }
 
 void MobotMotionControl::do_halt() {
@@ -137,9 +137,9 @@ void MobotMotionControl::do_spin(double spin_ang) {
     double final_time = fabs(spin_ang) / g_spin_speed;
     g_twist_cmd.angular.z = sgn(spin_ang) * g_spin_speed;
     while(timer < final_time) {
-      g_twist_commander.publish(g_twist_cmd);
-      timer += g_sample_dt;
-      loop_timer.sleep(); 
+    	g_twist_commander.publish(g_twist_cmd);
+    	timer += g_sample_dt;
+    	loop_timer.sleep(); 
     }  
     do_halt();
 }
@@ -154,21 +154,58 @@ void MobotMotionControl::do_move(double distance) {
     g_twist_cmd.angular.z = 0.0; //stop spinning
     g_twist_cmd.linear.x = sgn(distance) * g_move_speed;
     while(timer < final_time) {
-      g_twist_commander.publish(g_twist_cmd);
-      timer += g_sample_dt;
-      loop_timer.sleep(); 
+    	g_twist_commander.publish(g_twist_cmd);
+    	timer += g_sample_dt;
+    	loop_timer.sleep(); 
     }  
     do_halt();
 }
 
 void MobotMotionControl::executeCB(const actionlib::SimpleActionServer<mobot_motion_control::PathMsgAction>::GoalConstPtr& goal) {
-    ROS_INFO("in executeCB");
+	ROS_INFO("in executeCB");
+	std::vector<double> spin_angle = goal->angle;
+	std::vector<double> travel_distance = goal->distance;
+
+	int num_angle = spin_angle.size();
+	ros::Rate timer(10.0); //10 Hz timer
+	int i = 0;
+	while(ros::ok() && i < num_angle){
+		if(as_.isPreemptRequested()){
+			ROS_WARN("goal cancelled!");
+			result_.completed = false;
+			as_.setAborted(result_);
+			return;
+		}
+		feedback_.fdbk = i;
+		as_.publishFeedback(feedback_);
+		do_spin(spin_angle[i]);
+		do_move(travel_distance[i]);
+		i++;
+		timer.sleep();
+	}
+	do_halt();  //should this be done after every move?
+	result_.completed = true;
+	as_.setSucceeded(result_);
+
+
+/*
+	for(int i = 0; i < num_angle; i++) {
+		feedback_.fdbk = i;
+		as_.publishFeedback(feedback_);
+		do_spin(spin_angle[i]);
+		do_move(travel_distance[i]);
+		timer.sleep();
+	}
+	do_halt();
+	result_.completed = true;
+	as_.setSucceeded(result_);
+*/
+
+/*
     //do work here: this is where your interesting code goes
-    //refer to goal as goal->nav_path
-    //nav_msgs::Path path = goal->nav_path;
     ros::Rate timer(1.0); // 1Hz timer
 
-    while (ros::ok() /*&& there are still poses to be executed*/) {
+    while (ros::ok() && there are still poses to be executed) {
        // each iteration, check if cancellation has been ordered
        if (as_.isPreemptRequested()) {	
         	ROS_WARN("goal cancelled!");
@@ -186,6 +223,7 @@ void MobotMotionControl::executeCB(const actionlib::SimpleActionServer<mobot_mot
     //if we survive to here, then the goal was successfully accomplished; inform the client
     result_.completed = true; //value should be zero, if completed countdown
     as_.setSucceeded(result_); // return the "result" message to client, along with "success" status
+*/
 }
 
 int main(int argc, char** argv) {
