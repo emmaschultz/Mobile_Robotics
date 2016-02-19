@@ -21,9 +21,9 @@ private:
     actionlib::SimpleActionServer<mobot_motion_control::PathMsgAction> as_;
     ros::Publisher vel_pub;
     //////////////////add in a publisher that publishes to cmd_vel topic
-    const double move_speed_ = 1.0; //mobot will move at 1 m/s
-    const double spin_speed_ = 1.0; //mobot will spin at 1 rad/s
-    const double dt_ = 0.01;
+    const double g_move_speed = 1.0; //mobot will move at 1 m/s
+    const double g_spin_speed = 1.0; //mobot will spin at 1 rad/s
+    const double g_sample_dt = 0.01;
     geometry_msgs::Twist g_twist_cmd;
     geometry_msgs::Pose g_current_pose;   //TODO IS THIS NECESSARY?
 
@@ -36,9 +36,9 @@ private:
     double min_spin(double spin_angle);
     double convertPlanarQuat2Phi(geometry_msgs::Quaternion quaternion);
     geometry_msgs::Quaternion convertPlanarPhi2Quaternion(double phi);
-    void do_inits(ros::NodeHandle &nh_);
+    void do_inits();
     void do_halt();
-    void do_spin(double spin_angle);
+    void do_spin(double spin_ang);
     void do_move(double distance);
 
 public:
@@ -99,7 +99,7 @@ geometry_msgs::Quaternion MobotMotionControl::convertPlanarPhi2Quaternion(double
     return quaternion;
 }
 
-void MobotMotionControl::do_inits(ros::NodeHandle &n) {
+void MobotMotionControl::do_inits() {
     //initialize components of the twist command global variable
     g_twist_cmd.linear.x = 0.0;
     g_twist_cmd.linear.y = 0.0;    
@@ -121,20 +121,51 @@ void MobotMotionControl::do_inits(ros::NodeHandle &n) {
 }
 
 void MobotMotionControl::do_halt() {
-    ros::Rate loop_timer(1/g_sample_dt);   
-    g_twist_cmd.angular.z= 0.0;
-    g_twist_cmd.linear.x=0.0;
+    ros::Rate loop_timer(1 / g_sample_dt);   
+    g_twist_cmd.angular.z = 0.0;
+    g_twist_cmd.linear.x = 0.0;
     for (int i = 0; i < 10; i++) {
         g_twist_commander.publish(g_twist_cmd);
         loop_timer.sleep(); 
-    }   
+    }
+}
+
+//a function to reorient by a specified angle (in radians), then halt
+void MobotMotionControl::do_spin(double spin_ang) {
+    ros::Rate loop_timer(1 / g_sample_dt);
+    double timer = 0.0;
+    double final_time = fabs(spin_ang) / g_spin_speed;
+    g_twist_cmd.angular.z = sgn(spin_ang) * g_spin_speed;
+    while(timer < final_time) {
+      g_twist_commander.publish(g_twist_cmd);
+      timer += g_sample_dt;
+      loop_timer.sleep(); 
+    }  
+    do_halt();
+}
+
+// a function to move forward by a specified distance (in meters), then halt
+// always assumes robot is already oriented properly
+// but allow for negative distance to mean move backwards
+void MobotMotionControl::do_move(double distance) {
+    ros::Rate loop_timer(1 / g_sample_dt);
+    double timer = 0.0;
+    double final_time = fabs(distance) / g_move_speed;
+    g_twist_cmd.angular.z = 0.0; //stop spinning
+    g_twist_cmd.linear.x = sgn(distance) * g_move_speed;
+    while(timer < final_time) {
+      g_twist_commander.publish(g_twist_cmd);
+      timer += g_sample_dt;
+      loop_timer.sleep(); 
+    }  
+    do_halt();
 }
 
 void MobotMotionControl::executeCB(const actionlib::SimpleActionServer<mobot_motion_control::PathMsgAction>::GoalConstPtr& goal) {
     ROS_INFO("in executeCB");
     //do work here: this is where your interesting code goes
     //refer to goal as goal->nav_path
-    nav_msgs::Path path = goal->nav_path;
+    //nav_msgs::Path path = goal->nav_path;
     ros::Rate timer(1.0); // 1Hz timer
 
     while (ros::ok() /*&& there are still poses to be executed*/) {
