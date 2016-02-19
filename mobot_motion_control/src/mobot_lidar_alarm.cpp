@@ -6,17 +6,17 @@
 #include <std_msgs/Bool.h> // boolean message 
 
 
-const double MIN_SAFE_DISTANCE = 1.0; // set alarm if anything is within 0.5m of the front of robot
+const double MIN_SAFE_DISTANCE = 2.0; // set alarm if anything is within 5m of the front of robot
 
 // these values to be set within the laser callback
-float ping_dist_in_front_=3.0; // global var to hold length of a SINGLE LIDAR ping--in front
-int ping_index_= -1; // NOT real; callback will have to find this
-double angle_min_=0.0;
-double angle_max_=0.0;
-double angle_increment_=0.0;
+float ping_dist_in_front_ = 3.0; // global var to hold length of a SINGLE LIDAR ping--in front
+int ping_index_ = -1; // NOT real; callback will have to find this
+double angle_min_ = 0.0;
+double angle_max_ = 0.0;
+double angle_increment_ = 0.0;
 double range_min_ = 0.0;
 double range_max_ = 0.0;
-bool laser_alarm_=false;
+bool laser_alarm_ = false;
 
 ros::Publisher lidar_alarm_publisher_;
 ros::Publisher lidar_dist_publisher_;
@@ -24,7 +24,7 @@ ros::Publisher lidar_dist_publisher_;
 // to improve reliability and avoid false alarms or failure to see an obstacle
 
 void laserCallback(const sensor_msgs::LaserScan& laser_scan) {
-    if (ping_index_<0)  {
+    if (ping_index_ < 0)  {
         //for first message received, set up the desired index of LIDAR range to eval
         angle_min_ = laser_scan.angle_min;
         angle_max_ = laser_scan.angle_max;
@@ -41,12 +41,12 @@ void laserCallback(const sensor_msgs::LaserScan& laser_scan) {
     
    ping_dist_in_front_ = laser_scan.ranges[ping_index_];
    ROS_INFO("ping dist in front = %f",ping_dist_in_front_);
-   if (ping_dist_in_front_<MIN_SAFE_DISTANCE) {
-       ROS_WARN("DANGER, WILL ROBINSON!!");
-       laser_alarm_=true;
+   if (ping_dist_in_front_ < MIN_SAFE_DISTANCE) {
+    	ROS_WARN("DANGER, WILL ROBINSON!!");
+    	laser_alarm_ = true;
    }
    else {
-       laser_alarm_=false;
+    	laser_alarm_ = false;
    }
    std_msgs::Bool lidar_alarm_msg;
    lidar_alarm_msg.data = laser_alarm_;

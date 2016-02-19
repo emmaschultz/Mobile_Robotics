@@ -51,13 +51,13 @@ int main(int argc, char** argv) {
     //send these goal poses from the client to the server
     //make sure that nav_path.header.seq is filled in with a counter
     //then just use the loop to check whether alarm has been triggered?
-    ros::Rate timer(100);
+    ros::Rate timer(10);
 
     while(ros::ok()) {
         if(g_alarm_activated) {
             //preempt previously sent goal
-            //action_client.cancelAllGoals();
-            action_client.cancelGoal();
+            action_client.cancelAllGoals();
+            //action_client.cancelGoal();
             ROS_INFO("Current goal has been cancelled.");
 
             //turn and move a different direction because there is something in the robot's way
@@ -70,7 +70,10 @@ int main(int argc, char** argv) {
 
             action_client.sendGoal(goal, &doneCb);
 
+        	bool finished_before_timeout = action_client.waitForResult(); // wait forever...
+        	ROS_INFO("Evasive maneuver achieved.");
             g_alarm_activated = false; //reset alarm
+
         } else {
         	//set up goal distances
         	ROS_INFO("Sending original goal.");
@@ -100,8 +103,6 @@ int main(int argc, char** argv) {
         	action_client.sendGoal(goal, &doneCb);
         }
 
-        //action_client.sendGoal(goal, &doneCb); // we could also name additional callback functions here, if desired
-        //action_client.sendGoal(goal, &doneCb, &activeCb, &feedbackCb); //e.g., like this
         ros::spinOnce();
         timer.sleep();
     }

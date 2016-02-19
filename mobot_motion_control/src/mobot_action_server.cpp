@@ -167,7 +167,7 @@ void MobotMotionControl::executeCB(const actionlib::SimpleActionServer<mobot_mot
 	std::vector<double> travel_distance = goal->distance;
 
 	int num_angle = spin_angle.size();
-	ros::Rate timer(10.0); //10 Hz timer
+	ros::Rate timer(100.0); //100 Hz timer
 	int i = 0;
 	while(ros::ok() && i < num_angle){
 		if(as_.isPreemptRequested()){
@@ -176,14 +176,19 @@ void MobotMotionControl::executeCB(const actionlib::SimpleActionServer<mobot_mot
 			as_.setAborted(result_);
 			return;
 		}
+		//send feedback to tell the client which sub-pose you are on
 		feedback_.fdbk = i;
 		as_.publishFeedback(feedback_);
+
+		//execute sub-pose
 		do_spin(spin_angle[i]);
 		do_move(travel_distance[i]);
+		do_halt();
+
 		i++;
 		timer.sleep();
 	}
-	do_halt();  //should this be done after every move?
+	do_halt();
 	result_.completed = true;
 	as_.setSucceeded(result_);
 }
@@ -196,8 +201,7 @@ int main(int argc, char** argv) {
     MobotMotionControl as_object; // create an instance of the class "MobotMotionControl"
     
     ROS_INFO("going into spin");
-    // from here, all the work is done in the action server, with the interesting stuff done within "executeCB()"
-    // you will see 5 new topics under example_action: cancel, feedback, goal, result, status
+
     ros::spin();
 
     return 0;
