@@ -14,16 +14,16 @@
 #include <geometry_msgs/Pose.h>  //TODO IS THIS NEEDED?
 #include <mobot_motion_control/PathMsgAction.h>
 
+const double g_move_speed = 1.0; //mobot will move at 1 m/s
+const double g_spin_speed = 1.0; //mobot will spin at 1 rad/s
+const double g_sample_dt = 0.01;
+
 class MobotMotionControl {
 private:
     ros::NodeHandle nh_;  // we'll need a node handle; get one upon instantiation
 
     actionlib::SimpleActionServer<mobot_motion_control::PathMsgAction> as_;
     ros::Publisher vel_pub;
-    //////////////////add in a publisher that publishes to cmd_vel topic
-    const double g_move_speed = 1.0; //mobot will move at 1 m/s
-    const double g_spin_speed = 1.0; //mobot will spin at 1 rad/s
-    const double g_sample_dt = 0.01;
     geometry_msgs::Twist g_twist_cmd;
     geometry_msgs::Pose g_current_pose;   //TODO IS THIS NECESSARY?
 
@@ -54,7 +54,7 @@ MobotMotionControl::MobotMotionControl() : as_(nh_, "mobot_action", boost::bind(
     ROS_INFO("in constructor of MobotMotionControl...");
     // do any other desired initializations here...specific to your implementation
     vel_pub = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 1);  //TODO IS THIS THE CORRECT ROBOT NAME?
-    do_inits(&nh_);
+    do_inits();
     as_.start(); //start the server running
 }
 
@@ -125,7 +125,7 @@ void MobotMotionControl::do_halt() {
     g_twist_cmd.angular.z = 0.0;
     g_twist_cmd.linear.x = 0.0;
     for (int i = 0; i < 10; i++) {
-        g_twist_commander.publish(g_twist_cmd);
+        vel_pub.publish(g_twist_cmd);
         loop_timer.sleep(); 
     }
 }
@@ -137,7 +137,7 @@ void MobotMotionControl::do_spin(double spin_ang) {
     double final_time = fabs(spin_ang) / g_spin_speed;
     g_twist_cmd.angular.z = sgn(spin_ang) * g_spin_speed;
     while(timer < final_time) {
-    	g_twist_commander.publish(g_twist_cmd);
+    	vel_pub.publish(g_twist_cmd);
     	timer += g_sample_dt;
     	loop_timer.sleep(); 
     }  
@@ -154,7 +154,7 @@ void MobotMotionControl::do_move(double distance) {
     g_twist_cmd.angular.z = 0.0; //stop spinning
     g_twist_cmd.linear.x = sgn(distance) * g_move_speed;
     while(timer < final_time) {
-    	g_twist_commander.publish(g_twist_cmd);
+    	vel_pub.publish(g_twist_cmd);
     	timer += g_sample_dt;
     	loop_timer.sleep(); 
     }  

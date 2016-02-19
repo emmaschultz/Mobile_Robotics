@@ -59,7 +59,14 @@ int main(int argc, char** argv) {
             //action_client.cancelAllGoals();
             action_client.cancelGoal();
 
-            //TODO MAKE THIS TURN
+            //turn and move a different direction because there is something in the robot's way
+            goal.distance.resize(1);
+            goal.distance[0] = 3;
+
+            goal.angle.resize(1);
+            goal.angle[0] = 3.1415 / 2;
+
+            action_client.sendGoal(goal, &doneCb);
 
             g_alarm_activated = false; //reset alarm
         } else {
