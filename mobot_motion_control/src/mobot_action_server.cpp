@@ -11,44 +11,126 @@
 //#include <nav_msgs/Path.h>
 #include <std_msgs/Float64.h>  //TODO IS THIS NEEDED?
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Pose.h>  //TODO IS THIS NEEDED?
 #include <mobot_motion_control/PathMsgAction.h>
 
-int g_count = 0;
-bool g_count_failure = false;
-
-class MyMotionControl {
+class MobotMotionControl {
 private:
     ros::NodeHandle nh_;  // we'll need a node handle; get one upon instantiation
 
     actionlib::SimpleActionServer<mobot_motion_control::PathMsgAction> as_;
     ros::Publisher vel_pub;
     //////////////////add in a publisher that publishes to cmd_vel topic
-    
-    // here are some message types to communicate with our client(s)
-    mobot_motion_control::PathMsgGoal goal_; // goal message, received from client
-    mobot_motion_control::PathMsgResult result_; // put results here, to be sent back to the client when done w/ goal
-    mobot_motion_control::PathMsgFeedback feedback_; // for feedback 
-    //  use: as_.publishFeedback(feedback_); to send incremental feedback to the client
+    const double move_speed_ = 1.0; //mobot will move at 1 m/s
+    const double spin_speed_ = 1.0; //mobot will spin at 1 rad/s
+    const double dt_ = 0.01;
+    geometry_msgs::Twist g_twist_cmd;
+    geometry_msgs::Pose g_current_pose;   //TODO IS THIS NECESSARY?
 
+    mobot_motion_control::PathMsgGoal goal_;
+    mobot_motion_control::PathMsgResult result_;
+    mobot_motion_control::PathMsgFeedback feedback_;
+
+    //utility functions:
+    double sgn(double x);
+    double min_spin(double spin_angle);
+    double convertPlanarQuat2Phi(geometry_msgs::Quaternion quaternion);
+    geometry_msgs::Quaternion convertPlanarPhi2Quaternion(double phi);
+    void do_inits(ros::NodeHandle &nh_);
+    void do_halt();
+    void do_spin(double spin_angle);
+    void do_move(double distance);
 
 public:
-    MyMotionControl(); //define the body of the constructor outside of class definition
+    MobotMotionControl(); //define the body of the constructor outside of class definition
 
-    ~MyMotionControl(void) {
+    ~MobotMotionControl(void) {
     }
     // Action Interface
     void executeCB(const actionlib::SimpleActionServer<mobot_motion_control::PathMsgAction>::GoalConstPtr& goal);
 };
 
-MyMotionControl::MyMotionControl() : as_(nh_, "mobot_action", boost::bind(&MyMotionControl::executeCB, this, _1),false) {
-    ROS_INFO("in constructor of MyMotionControl...");
+MobotMotionControl::MobotMotionControl() : as_(nh_, "mobot_action", boost::bind(&MobotMotionControl::executeCB, this, _1),false) {
+    ROS_INFO("in constructor of MobotMotionControl...");
     // do any other desired initializations here...specific to your implementation
-    vel_pub = nh_.advertise<geometry_msgs::Twist>("/mobot/cmd_vel", 1);  //TODO IS THIS THE CORRECT ROBOT NAME?
-
+    vel_pub = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 1);  //TODO IS THIS THE CORRECT ROBOT NAME?
+    do_inits(&nh_);
     as_.start(); //start the server running
 }
 
-void MyMotionControl::executeCB(const actionlib::SimpleActionServer<mobot_motion_control::PathMsgAction>::GoalConstPtr& goal) {
+//signum function: strip off and return the sign of the argument
+double MobotMotionControl::sgn(double x) {
+    if (x > 0.0) {
+        return 1.0;
+    } else if (x < 0.0) {
+        return -1.0;
+    } else {
+        return 0.0;
+    }
+}
+
+//a function to consider periodicity and find min delta angle
+double MobotMotionControl::min_spin(double spin_angle) {
+    if (spin_angle > M_PI) {
+        spin_angle -= 2.0 * M_PI;
+    }
+    if (spin_angle < -M_PI) {
+        spin_angle += 2.0 * M_PI;
+    }
+
+    return spin_angle;
+}
+
+// a useful conversion function: from quaternion to yaw
+double MobotMotionControl::convertPlanarQuat2Phi(geometry_msgs::Quaternion quaternion) {
+    double quat_z = quaternion.z;
+    double quat_w = quaternion.w;
+    double phi = 2.0 * atan2(quat_z, quat_w); // cheap conversion from quaternion to heading for planar motion
+    return phi;
+}
+
+//and the other direction:
+geometry_msgs::Quaternion MobotMotionControl::convertPlanarPhi2Quaternion(double phi) {
+    geometry_msgs::Quaternion quaternion;
+    quaternion.x = 0.0;
+    quaternion.y = 0.0;
+    quaternion.z = sin(phi / 2.0);
+    quaternion.w = cos(phi / 2.0);
+    return quaternion;
+}
+
+void MobotMotionControl::do_inits(ros::NodeHandle &n) {
+    //initialize components of the twist command global variable
+    g_twist_cmd.linear.x = 0.0;
+    g_twist_cmd.linear.y = 0.0;    
+    g_twist_cmd.linear.z = 0.0;
+    g_twist_cmd.angular.x = 0.0;
+    g_twist_cmd.angular.y = 0.0;
+    g_twist_cmd.angular.z = 0.0;  
+    
+    //define initial position to be 0
+    g_current_pose.position.x = 0.0;
+    g_current_pose.position.y = 0.0;
+    g_current_pose.position.z = 0.0;
+    
+    // define initial heading to be "0"
+    g_current_pose.orientation.x = 0.0;
+    g_current_pose.orientation.y = 0.0;
+    g_current_pose.orientation.z = 0.0;
+    g_current_pose.orientation.w = 1.0;  
+}
+
+void MobotMotionControl::do_halt() {
+    ros::Rate loop_timer(1/g_sample_dt);   
+    g_twist_cmd.angular.z= 0.0;
+    g_twist_cmd.linear.x=0.0;
+    for (int i = 0; i < 10; i++) {
+        g_twist_commander.publish(g_twist_cmd);
+        loop_timer.sleep(); 
+    }   
+}
+
+void MobotMotionControl::executeCB(const actionlib::SimpleActionServer<mobot_motion_control::PathMsgAction>::GoalConstPtr& goal) {
     ROS_INFO("in executeCB");
     //do work here: this is where your interesting code goes
     //refer to goal as goal->nav_path
@@ -80,7 +162,7 @@ int main(int argc, char** argv) {
 
     ROS_INFO("instantiating the timer_action_server: ");
 
-    MyMotionControl as_object; // create an instance of the class "MyMotionControl"
+    MobotMotionControl as_object; // create an instance of the class "MobotMotionControl"
     
     ROS_INFO("going into spin");
     // from here, all the work is done in the action server, with the interesting stuff done within "executeCB()"
