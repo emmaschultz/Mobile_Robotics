@@ -186,44 +186,6 @@ void MobotMotionControl::executeCB(const actionlib::SimpleActionServer<mobot_mot
 	do_halt();  //should this be done after every move?
 	result_.completed = true;
 	as_.setSucceeded(result_);
-
-
-/*
-	for(int i = 0; i < num_angle; i++) {
-		feedback_.fdbk = i;
-		as_.publishFeedback(feedback_);
-		do_spin(spin_angle[i]);
-		do_move(travel_distance[i]);
-		timer.sleep();
-	}
-	do_halt();
-	result_.completed = true;
-	as_.setSucceeded(result_);
-*/
-
-/*
-    //do work here: this is where your interesting code goes
-    ros::Rate timer(1.0); // 1Hz timer
-
-    while (ros::ok() && there are still poses to be executed) {
-       // each iteration, check if cancellation has been ordered
-       if (as_.isPreemptRequested()) {	
-        	ROS_WARN("goal cancelled!");
-        	result_.completed = false;
-        	as_.setAborted(result_); // tell the client we have given up on this goal; send the result message as well
-        	return;
- 		}
- 	
- 	   //if here, then goal is still valid; provide some feedback
- 	   feedback_.fdbk = 5; //this should maybe be nav_path.header.seq TODO GIVE SOME BETTER FEEDBACK populate feedback message with current pose
- 	   as_.publishFeedback(feedback_); // send feedback to the action client that requested this goal
- 	   //go to next pose
-       timer.sleep(); //wait 1 sec between loop iterations of this timer
-    }
-    //if we survive to here, then the goal was successfully accomplished; inform the client
-    result_.completed = true; //value should be zero, if completed countdown
-    as_.setSucceeded(result_); // return the "result" message to client, along with "success" status
-*/
 }
 
 int main(int argc, char** argv) {

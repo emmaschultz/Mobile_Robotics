@@ -37,8 +37,8 @@ int main(int argc, char** argv) {
 
     // attempt to connect to the server:
     ROS_INFO("waiting for server: ");
-    bool server_exists = action_client.waitForServer(ros::Duration(5.0)); // wait for up to 5 seconds
-    // bool server_exists = action_client.waitForServer(); //wait forever
+    //bool server_exists = action_client.waitForServer(ros::Duration(5.0)); // wait for up to 5 seconds
+    bool server_exists = action_client.waitForServer(); //wait forever
 
     if (!server_exists) {
         ROS_WARN("could not connect to server; halting");
@@ -58,8 +58,10 @@ int main(int argc, char** argv) {
             //preempt previously sent goal
             //action_client.cancelAllGoals();
             action_client.cancelGoal();
+            ROS_INFO("Current goal has been cancelled.");
 
             //turn and move a different direction because there is something in the robot's way
+            ROS_INFO("Attempting to turn and move in alternate direction.");
             goal.distance.resize(1);
             goal.distance[0] = 3;
 
@@ -71,6 +73,16 @@ int main(int argc, char** argv) {
             g_alarm_activated = false; //reset alarm
         } else {
         	//set up goal distances
+        	ROS_INFO("Sending original goal.");
+
+        	// tell robot to move straight forward 1 unit
+        	goal.distance.resize(1);
+        	goal.distance[0] = 1;
+
+        	goal.angle.resize(1);
+        	goal.angle[0] = 0;
+
+        	/*
         	goal.distance.resize(4);
         	goal.distance[0] = 4;
         	goal.distance[1] = 3;
@@ -83,19 +95,9 @@ int main(int argc, char** argv) {
         	goal.angle[1] = 3.1415 / 2;
         	goal.angle[2] = 0;
         	goal.angle[3] = -3.1415 / 2;
+        	*/
 
         	action_client.sendGoal(goal, &doneCb);
-
-        	/*
-        	bool finished_before_timeout = action_client.waitForResult(ros::Duration(5.0));
-        	//bool finished_before_timeout = action_client.waitForResult(); // wait forever...
-        	if (!finished_before_timeout) {
-            	ROS_WARN("giving up waiting on result");
-            	return 1;
-        	} else {
-            	//if here, then server returned a result to us
-        	}
-        	*/
         }
 
         //action_client.sendGoal(goal, &doneCb); // we could also name additional callback functions here, if desired
