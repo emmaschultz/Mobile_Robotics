@@ -33,7 +33,7 @@
 
 
 //constructor: fill in default param values (changeable via "set" fncs)
-TrajBuilder::TrajBuilder()  {
+TrajBuilder::TrajBuilder() {
     dt_ = default_dt; //0.02; //send desired-state messages at fixed rate, e.g. 0.02 sec = 50Hz
     //dynamic parameters: should be tuned for target system
     accel_max_ = default_accel_max; //0.5; //1m/sec^2
